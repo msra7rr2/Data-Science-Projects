@@ -164,7 +164,7 @@ sum(prop_varex[1:30]) #97.7% variance explained by first 30 components
 
 Of course, the R Caret package can do PCA preprocessing automatically!
 
-## Modeling: Classifiction Tree & Random Forest
+## Modelling: Classifiction Tree & Random Forest
 
 We will run 1) a classificition tree; and 2) a random forest model to predict 'classe', and do some model comparison.
 
