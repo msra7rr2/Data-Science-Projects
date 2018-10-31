@@ -10,7 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 In this project, the goal is to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants to build a model that accurately predicts *how well* they did a weight lifting exercise (categorical 'classe' variable).
 
-A classification tree is built that yields very low accuracy (36%), compared to a random forest model that has 98% accuracy. To improve runtime performance in random forest, we use parallel processing, and change the default cross validation method used in caret: bootstrapping with 25 samples, to  k-fold cross validation with 5 samples. 
+A classification tree is built that yields very low accuracy (37%), compared to a random forest model that has 98% accuracy. To improve runtime performance in random forest, we use parallel processing, and change the default cross validation method used in caret: bootstrapping with 25 samples, to  k-fold cross validation with 5 samples. 
 
 ## The Data
 
@@ -122,7 +122,6 @@ As well as summary columns full of NAs, we will get rid of the following that wo
 train2 = train %>%
   filter(new_window == 'no') %>% 
   select_if(function(x) {!any(is.na(x))}) %>% 
-  select_if(function(x) {!all(x=='')}) %>%
   select(-(X:num_window))
 ```
 
@@ -138,9 +137,7 @@ Running a model with all variables in the dataset will be computationally intens
 First, we remove 'classe' to run PCA on the rest of our numeric variables. Then, we can use prcomp(), which centers/normalizes variables to have mean equals to zero and standard deviation equals to 1.
 
 ```{r, echo = T, message=FALSE, warning = FALSE, cache=T}
-train_PCA = train2 %>% select(-classe) #remove dependent var for PCA
-
-prin_comp = prcomp(train_PCA, scale. = T) #The base R function prcomp() is used to perform PCA. By default, it centers the variable to have mean equals to zero. With parameter scale. = T, we normalize the variables to have standard deviation equals to 1
+prin_comp = prcomp(train2 %>% select(-classe) , scale. = T) #remove dependent var & run PCA. By default,  prcomp() centers the variable to have mean equals to zero. With parameter scale. = T, we normalize the variables to have standard deviation equals to 1
 ```
 
 The following are the resultant principal components. Points that are close together correspond to observations that have similar scores on the components displayed in the plot.
@@ -153,7 +150,10 @@ This scree plot shows that ~30 componenents explain around 98% of the variance i
 ```{r, echo = T, fig.width=7, fig.height=4, message=FALSE, warning=FALSE, cache=T, results='asis'}
 pr_var = prin_comp$sdev^2 #computing variance 
 prop_varex = pr_var/sum(pr_var) #proportion of variance explained
-plot(cumsum(prop_varex))
+plot(cumsum(prop_varex), 
+     xlab = "Principal Component",
+     ylab = "Cumulative Proportion of Variance Explained", 
+     type = "b")
 ```
 
 ```{r, echo = T, message=FALSE, warning=FALSE, cache=T, results='hide'}
@@ -162,9 +162,14 @@ sum(prop_varex[1:25]) #95.5% variance explained by first 25 components
 sum(prop_varex[1:30]) #97.7% variance explained by first 30 components
 ```
 
-Of course, the R Caret package can do PCA preprocessing automatically!
+**Creating new dataset with 30 principal components as predictors**
+```{r, echo = T, message=FALSE, warning=FALSE, cache=T}
+train_PCA = as.data.frame(prin_comp$x) %>% #make new dataset with principal components
+  select(PC1:PC30) %>% #keep only first 30
+  mutate(classe = train2$classe)
+```
 
-## Modelling: Classifiction Tree & Random Forest
+## Modeling: Classifiction Tree & Random Forest
 
 We will run 1) a classificition tree; and 2) a random forest model to predict 'classe', and do some model comparison.
 
@@ -175,18 +180,18 @@ A decision tree uses a tree structure to represent a number of possible deision 
 **Creating a validation dataset**
 ```{r, echo = T, message=FALSE, warning=FALSE, cache=T}
 set.seed(123)
-inTraining = createDataPartition(train2$classe, p=0.75,list=FALSE) #creates a stratified random sample of the data
-train3 = train2[inTraining,]
-validation = train2[-inTraining,]
+inTraining = createDataPartition(train_PCA$classe, p=0.75,list=FALSE) #creates a stratified random sample of the data
+train_PCA2 = train_PCA[inTraining,]
+validation_PCA = train_PCA[-inTraining,]
 ```
 
 **Fitting the model**
 ```{r, echo = T, message=FALSE, warning=FALSE, cache=T}
-fit_ct = train(classe ~., method='rpart', preProcess='pca',data=train3)
+fit_ct = train(classe ~., method='rpart',data=train_PCA2)
 ```
 
-**Evaluate model**
-The parameter “cp” in the output represents the degree of complexity, where the tree with highest accuracy had the smallest value of cp. The accucay for this model is still very low (35%).
+**Evaluate model**  
+The parameter “cp” in the output represents the degree of complexity, where the tree with highest accuracy had the smallest value of cp. The accucay for this model is still very low (37%).
 
 ```{r, echo = T, fig.width=6, fig.height=3, message=FALSE, warning=FALSE, cache=T}
 fit_ct
@@ -197,12 +202,12 @@ The final Tree uses two of the pricipal components as predictors, and doesn't ap
 rpart.plot(fit_ct$finalModel, box.palette="RdBu", shadow.col="gray", nn=TRUE)
 ```
 
-Our confusion matrix shows the average accuracy across resamples (35%) with negligible predictive power on any Class other than A. On our validation data, the accuracy is 39%: as discussed, it can't predict Class B or C, and is only successfully predicting Class A.
+Our confusion matrix shows the average accuracy across resamples (39%) with negligible predictive power on any Class other than A. On our validation data, the accuracy is 39%: as discussed, it can't predict Class B or C, and is only successfully predicting Class A.
 
 ```{r, echo = T, fig.width=6, fig.height=3, message=FALSE, warning=FALSE, cache=T}
 confusionMatrix(fit_ct)
-ctPred = predict(fit_ct, validation)
-confusionMatrix(ctPred, validation$classe)
+ctPred = predict(fit_ct, validation_PCA)
+confusionMatrix(ctPred, validation_PCA$classe)
 ```
 
 ### Random Forest
@@ -213,7 +218,7 @@ In Random Forest, we grow multiple trees as opposed to a single tree above. To c
 
 Unless something is done to improve response time, running a random forest on our training set is too slow. To improve this we'll take the following steps as suggested by [Len Greski](https://github.com/lgreski/datasciencectacontent/blob/master/markdown/pml-randomForestPerformance.md):
 
-+ **PCA** (as above) - could be used to reduce the number of predictors, however we'll add in as preprocessing in model.
++ **PCA** (as above) - used to reduce the number of predictors.
 + **Parallel processing** - to allow to run models in parallel to obtain a manageable response time. Caret supports the parallel processing capabilities of the parallel package.
 + **Changing resampling method from default of bootstrapping to k-fold cross-validation** - to reduce number of samples against which the model (random forest) is run from 25 to 5, and to change each sample's composition from leave one out to randomly selected training folds.
 
@@ -233,7 +238,7 @@ fitControl <- trainControl(method = "cv",
                            allowParallel = TRUE)
 
 #Step 3: Develop training model using trainControl() object we just created
-fit_rf = train(classe ~., method='rf', preProcess='pca',data=train3, trControl=fitControl)
+fit_rf = train(classe ~., method='rf',data=train_PCA2, trControl=fitControl)
 
 #Step 4: De-register parallel processing cluster 
 stopCluster(cluster)
@@ -253,8 +258,8 @@ The confusion matrix on resamples shows that it is much better at predicting all
 On our validation data, the accuracy is 98% - we will use this model to predict our sample of 20 observations in our final test set.
 ```{r, echo = T, fig.width=6, fig.height=3, message=FALSE, warning=FALSE, cache=T}
 confusionMatrix(fit_rf)
-rfPred = predict(fit_rf, validation)
-confusionMatrix(rfPred, validation$classe)
+rfPred = predict(fit_rf, validation_PCA)
+confusionMatrix(rfPred, validation_PCA$classe)
 ```
 
 ### Making predictions on our test set
@@ -266,14 +271,21 @@ problem_id = test$problem_id #saving case id of the 20 observatinos to predict C
 test2 = test %>%
   filter(new_window == 'no') %>% 
   select_if(function(x) {!any(is.na(x))}) %>% 
-  select_if(function(x) {!all(x=='')}) %>%
   mutate(classe = problem_id) %>% #create classe column 
   select(-(X:num_window), -problem_id)
 ```
 
+**Transform test data from PCA loadings of train data**
+```{r, echo = T, message=FALSE, warning=FALSE, cache=T}
+test3 = as.data.frame(predict(prin_comp, newdata = test2 %>%
+                                select(-classe))) %>%
+  select(PC1:PC30) %>%
+  mutate(classe = test2$classe)
+```
+
 **Making predictions with our random forest model**  
 ```{r, echo = T, message=FALSE, warning=FALSE, cache=T}
-rfPred_test = as_tibble(predict(fit_rf, test2)) #saving predictions on test data
+rfPred_test = as_tibble(predict(fit_rf, test3)) #saving predictions on test data
 final_predictions = cbind(problem_id, rfPred_test) 
 final_predictions
 ```
