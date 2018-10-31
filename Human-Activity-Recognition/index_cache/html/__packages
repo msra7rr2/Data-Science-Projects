@@ -1,0 +1,16 @@
+base
+dplyr
+ggplot2
+gridExtra
+RColorBrewer
+kableExtra
+magrittr
+lattice
+caret
+xtable
+rpart
+rpart.plot
+foreach
+iterators
+doParallel
+bindrcpp
