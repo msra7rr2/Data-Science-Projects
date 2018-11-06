@@ -8,7 +8,7 @@ In this project, the goal is to use house price data (availabe through [Kaggle](
 
 Four regression models are built: 1) random forest; 2) ridge regression; 3) lasso regression; and 4) elastic net using k-fold cross validation with 5 samples. Random forest was the best performer, generating the lowest median root mean square error of all models across resamples.
 
-2. [Human Activity Recognition (classification)](https://msra7rr2.github.io/Data-Science-Projects/index.html)
+2. Human Activity Recognition (classification) [HAR github page](https://msra7rr2.github.io/Data-Science-Projects/index.html)
 
 In this project, I used data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants to build a model that accurately predicts *how well* they did a weight lifting exercise (categorical 'classe' variable).
 
