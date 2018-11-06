@@ -30,6 +30,7 @@ library(rpart.plot)
 library(parallel)
 library(doParallel)
 library(sqldf)
+library(corrplot)
 options(scipen=999) #taking off scientific notation for nicer plots
 ```
 
@@ -275,7 +276,7 @@ The data has been cleaned of missing values and is now ready for analysis.
 
 ## Exploratory Analysis
 
-Let't look at the correlation between numeric variables and those most highly correlated with SalePrice again. Later on, we'll have to get rid of highly correlated variables.  
+Let's look at the correlation between numeric variables and those most highly correlated with SalePrice again. Later on, we'll have to get rid of highly correlated variables.  
 
 Through visualisation, the relationship between SalePrice and these variables is very clear.
 
@@ -369,15 +370,7 @@ grid.arrange(p7,p8,p9,p10,p11,p12,p13,p14,p15,p16, nrow=5)
 There are also other common sense factor variables in the data that are linked to SalePrice: for example neighbourhood,  whether the house has central air or garage finish.
 
 **Neighborhood, Central Air & Garage Finish plots**  
-```{r, fig.width=15, fig.height=5, echo =FALSE, message=FALSE, warning=FALSE,fig.pos='h', style='float: left', cache=T}
 
-p17 <- ggplot(full %>% filter(!is.na(SalePrice)), aes (x= reorder(Neighborhood, SalePrice, FUN = median), y=SalePrice)) + 
-  geom_boxplot(fill = "pink") +
-  xlab("Neighborhood")
-
-p17
-```
-  
   
 ```{r, fig.width=15, fig.height=5, echo =FALSE, message=FALSE, warning=FALSE,fig.pos='h', style='float: left', cache=T}
 
@@ -391,6 +384,18 @@ p19 <- ggplot(full %>% filter(!is.na(SalePrice)), aes (x= reorder(GarageFinish, 
 
 grid.arrange(p18, p19, nrow=1)
 ```
+  
+  
+  
+```{r, fig.width=15, fig.height=5, echo =FALSE, message=FALSE, warning=FALSE,fig.pos='h', style='float: left', cache=T}
+
+p17 <- ggplot(full %>% filter(!is.na(SalePrice)), aes (x= reorder(Neighborhood, SalePrice, FUN = median), y=SalePrice)) + 
+  geom_boxplot(fill = "pink") +
+  xlab("Neighborhood")
+
+p17
+```
+  
 
 ## Feature Engineering
 
