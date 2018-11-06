@@ -1,6 +1,6 @@
 # Data-Science-Projects
 
-A collection of data science projects using open source data. 
+A collection of beginner data science projects using open source data to learn and have fun. 
 
 1. House Prices (regression)
 
