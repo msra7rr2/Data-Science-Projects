@@ -2,7 +2,7 @@
 
 A collection of beginner data science projects using open source data to learn and have fun. 
 
-1. **House Prices (regression)** [HP github page](https://msra7rr2.github.io/Data-Science-Projects/House-Prices/index_house_prices.html)
+1. **House Prices (regression)** [HP github page](https://msra7rr2.github.io/Data-Science-Projects/House-Prices/index_housing_prices.html)
 
 In this project, the goal is to use house price data (availabe through [Kaggle](https://www.kaggle.com/c/house-prices-advanced-regression-techniques) from homes in Ames, Iowa) to create a model that will help predict house prices based on an original 79 house features.
 
