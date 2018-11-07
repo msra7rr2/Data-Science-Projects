@@ -17,7 +17,7 @@ A classification tree is built that yields very low accuracy (37%), compared to 
 
 3. **Coursework assignments** 
 
-+**Data Cleaning** [link]
++ **Data Cleaning** [link]
 
 Write code that does the following and submit tidy dataset: 
 1. Merges the training and the test sets to create one data set.
@@ -28,11 +28,11 @@ Write code that does the following and submit tidy dataset:
 
 +**Statistical Inference** [link]
 
-+Part 1: Simulation exercise/Central Limit Theorem: We will be investigating the exponential distribution in R and comparing it with the Central Limit Theorem by analysing the distribution of averages of 40 exponentials, and doing 1,000 simulations.
++ Part 1: Simulation exercise/Central Limit Theorem: We will be investigating the exponential distribution in R and comparing it with the Central Limit Theorem by analysing the distribution of averages of 40 exponentials, and doing 1,000 simulations.
 
-+Part 2: Hypothesis testing/Differences in tooth length
++ Part 2: Hypothesis testing/Differences in tooth length
 
-+**Regression** [link]
++ **Regression** [link]
 
 Brief exercise using linear regression to explore MPG (Miles/(US) gallon) and Transmission in the mtcars dataset to determine whether 1) an automatic or manual transmission better for MPG; and to 2) quantify the MPG difference between automatic & manual transmissions.
 
