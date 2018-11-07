@@ -15,22 +15,22 @@ In this project, I used data from accelerometers on the belt, forearm, arm, and 
 A classification tree is built that yields very low accuracy (37%), compared to a random forest model that has 98% accuracy.
 
 
-3. **SOME COURSERA COURSEWORK ASSIGNMENTS** 
+3. **Some Coursera Coursework Assignments** 
 
-**Data Cleaning** [link](https://github.com/msra7rr2/Data-Science-Projects/tree/gh-pages/Coursera%20Coursework%20-%20Data%20Cleaning): Write code that does the following and submit tidy dataset: 
+[**Data Cleaning**](https://github.com/msra7rr2/Data-Science-Projects/tree/gh-pages/Coursera%20Coursework%20-%20Data%20Cleaning): Write code that does the following and submit tidy dataset: 
 1. Merges the training and the test sets to create one data set.
 2. Extracts only the measurements on the mean and standard deviation for each measurement.
 3. Uses descriptive activity names to name the activities in the data set
 4. Appropriately labels the data set with descriptive variable names.
 5. From the data set in step 4, creates a second, independent tidy data set with the average of each variable for each activity and each subject.
 
-**Statistical Inference** [link](https://github.com/msra7rr2/Data-Science-Projects/tree/gh-pages/Coursera%20Coursework%20-%20Statistifcal%20Inference)
+[**Statistical Inference**]https://github.com/msra7rr2/Data-Science-Projects/tree/gh-pages/Coursera%20Coursework%20-%20Statistifcal%20Inference)
 
 + Part 1: Simulation exercise/Central Limit Theorem: We will be investigating the exponential distribution in R and comparing it with the Central Limit Theorem by analysing the distribution of averages of 40 exponentials, and doing 1,000 simulations.
 
 + Part 2: Hypothesis testing/Differences in tooth length
 
-**Regression** [link](https://github.com/msra7rr2/Data-Science-Projects/tree/gh-pages/Coursera%20Coursework%20-%20Regression)
+[**Regression**](https://github.com/msra7rr2/Data-Science-Projects/tree/gh-pages/Coursera%20Coursework%20-%20Regression)
 
 + Brief exercise using linear regression to explore MPG (Miles/(US) gallon) and Transmission in the mtcars dataset to determine whether 1) an automatic or manual transmission better for MPG; and to 2) quantify the MPG difference between automatic & manual transmissions.
 
