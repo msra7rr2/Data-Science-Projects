@@ -1,0 +1,172 @@
+---
+title: "MPG vs Transmission Type in mtcars Dataset"
+output: pdf_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(fig.pos = 'H')
+```
+```{r, echo=FALSE}
+setwd("/Users/raqdom/DataScience_Coursera/07_Regression")
+```
+## Executive Summary
+This is a brief exercise looking MPG (Miles/(US) gallon) and Transmission in the mtcars dataset to explore whether 1) an automatic or manual transmission better for MPG?; and to 2) quantify the MPG difference between automatic & manual transmissions.
+
+Our final model shows that having a manual or automatic transmission doesn't have a statistically significant association with mpg once other car attributes like number of cylinders, weight, and horsepower are controlled for. While the mean mpg for automatic cars is considerably lower than manual in the data (17.2 vs 24.4), the relationship seems confounded by these variables.
+
+The final model suggests that higher 'cyl', 'wt', and 'hp' are all significantly associated with lower MPG.
+
+## The Data
+The data has 32 observations on 11 variables, 4 of which appear to be factor variables. 
+```{r}
+data(mtcars)
+?mtcars
+```
+
+Having read the data documentation, we will transform factor variables from numeric using dplyr:
+```{r, warning =FALSE, message =FALSE}
+library(dplyr)
+data <- mtcars %>%
+  mutate(am = factor(am)) %>%
+  mutate(cyl = factor(cyl)) %>%
+  mutate(vs = factor(vs)) %>%
+  mutate(gear = factor(gear))
+```
+
+The mean MPG for all 32 cars in the dataset is 20.1, but a boxplot suggests automatic transmissions have lower MPG (mean of 17.2 vs 24.4).
+
+```{r, fig.width=7, fig.height=2.5, echo =FALSE, message=FALSE, warning=FALSE}
+library(ggplot2)
+library(gridExtra)
+
+grid.arrange(
+ggplot(data) +
+  geom_histogram(aes (x=mpg), binwidth = 5, fill="light pink") +
+  labs(x='MPG', y = 'Number of Cars', title = 'MPG Histogram')
+,
+data %>% 
+  mutate(am = ifelse(am == 0, 'Automatic', 'Manual')) %>%
+  ggplot(aes(y=mpg, x=am, fill=am)) +
+  geom_boxplot() +
+  labs(x = 'Transmission', y = 'MPG', title = 'MPG x Transmission BoxPlot') +
+  guides(fill=FALSE), nrow=1)
+```
+
+Looking at Fig.1 & 2 in the Appendix, MPG is highly correlated with 'cyl', as well as quite a few of the numeric variables, especially 'wt', 'disp', and 'hp' - these will have to be considered in the model.
+
+## Model Selection
+
+Since MPG is a continuous variable, it will be modelled as the outcome using a multiple linear model. We will start by using Transmission (am) as the only regressor, and then create nested models to control for other variables. We will start by adding 'cyl', as there seems to be a strong correlation with mpg, and then add numeric variables with a correlation coefficient > 0.7 with MPG in descending order. To avoid issues of multicollinearity, 'disp' will be skipped, as it's highly correlated with 'wt'.
+
+Models will be compared using ANOVA, which will help determine whether additional variables are necessary.
+
+```{r, echo = TRUE}
+lm1 <- lm(mpg ~ am, data)
+lm2 <- lm(mpg ~ am + cyl, data)
+lm3 <- lm(mpg ~ am + cyl + wt, data)
+lm4 <- lm(mpg ~ am + cyl + wt + hp, data)
+```
+
+The outputs from ANOVA compare a reduced model step-wise to a more full model (lm4). The outputs suggest there is good reason to use model 'lm4' over the others.
+
+**ANOVA: lm1, lm2, lm3, lm4**
+```{r, echo = FALSE, message=FALSE, warning = FALSE, results='asis'}
+library(xtable)
+options(xtable.comment = FALSE)
+xtable(anova(lm1, lm2, lm3, lm4))
+```
+
+Residual/diagnostic plots for 'lm4' in Fig.4 in the Appendix show we might have some issues with outliers (20, 18, 3, 17), so we'll re-do the model without these points:
+```{r}
+lm4_v2 <- lm(mpg ~ am + cyl + wt + hp, data[-c(20, 18, 3,17),])
+```
+
+This new model's residual plots in Fig.5 of the Appendix look acceptable now. 
+
+**Model interpretation:**
+
++ **Intercept**: *This is the mpg when all variables = 0 (in the case of Transmission (am), this is automatic).*
++ **Transmission (am)**: *Manual or Automatic is not significant once we control for cyl (compare outputs from model 1 to model 2 in Fig3 in Appendix).*
++ **Number of Cylinters (cyl)**: *Higher cyl is associated with lower mpg at a statistically signiant level. 6 & 8 cylinders (cyl6 & cyl8) are associated with a -2.3 reduction in mpg compared to 4.*
++ **Weight (wt)**: *Higher weight is associated with lower mpg at a statistically significant level. A 1,000 lbs increase in wt is associated with a -3.2 reduction in mpg.*
++ **Gross horsepower (hp)**: *Higher horsepower is associated with lower mpg at a statistically significant level. A 1-unit increase in hp is associated with a -0.02 reduction in mpg.*
++ The model has R-squared of 0.89, which explains 89% of the variability in mpg.
+
+**MPG model outputs: lm4_v2**
+```{r, echo = FALSE, message=FALSE, warning = FALSE, results='asis', fig.pos='h'}
+xtable(lm4_v2)
+```
+
+##APPENDIX
+
+**Fig.1: Scatterplot Matrix: Scatterplots for Pairs of Variables in MtCars Data**  
+```{r, echo =FALSE, fig.width=8, fig.height=10, fig.pos='h', style='float: left'}
+pairs(data) #except for qsec, all vars look to be correlated with mpg
+```
+
+**Fig.2: Correlation of MtCars Numeric Variables**  
+```{r, echo = FALSE, message=FALSE, warning = FALSE, results='asis'}
+xtable(cor(data[,which(sapply(data, is.numeric))]))
+```
+
+
+**Fig.3: Model Outputs**  
+Model 1: 
+```{r, echo = FALSE, message=FALSE, warning = FALSE, results='asis',fig.pos='h', style='float: left'}
+xtable(summary(lm1))  
+```
+ 
+Model 2: 
+```{r, echo = FALSE, message=FALSE, warning = FALSE, results='asis',fig.pos='h', style='float: left'}
+xtable(summary(lm2))  
+```
+
+Model 3: 
+```{r, echo = FALSE, message=FALSE, warning = FALSE, results='asis',fig.pos='h', style='float: left'}
+xtable(summary(lm3))  
+```
+ 
+Model 4:  
+```{r, echo = FALSE, message=FALSE, warning = FALSE, results='asis',fig.pos='h', style='float: left'}
+xtable(summary(lm4))  
+```
+ 
+**Fig.4: lm4/Model4 Residual/Diagnostic Plots**   
+```{r, echo=FALSE,fig.pos='h', style='float: left'}
+par(mfrow = c(2, 2))
+plot(lm4)
+```
+
+**Fig.5: lm4 without outliers Residual/Diagnostic Plots**   
+```{r, echo= FALSE,fig.pos='h', style='float: left'}
+par(mfrow = c(2, 2))
+plot(lm4_v2)
+```
+ 
+**Fig.6: Relationship between Trasmission & MPG & Other Variables**  
+Transmission vs Number of Cylinders:  
+```{r, echo = FALSE, message=FALSE, warning = FALSE, results='asis',fig.pos='h', style='float: left'}
+library(tidyr)
+xtable(data %>% 
+  select(cyl, am) %>%
+  mutate(Transmission = ifelse(am == 0, 'Automatic', 'Manual')) %>%
+  mutate(Cylinders = cyl) %>%
+  group_by(Cylinders, Transmission) %>%
+  summarise(Cars = n()) %>%
+  spread(Transmission, Cars))
+```
+    
+Transmission vs Weight/Horsepower:  
+  
+```{r, echo = FALSE, message=FALSE, warning = FALSE, results='asis', fig.width=6, fig.height=3,fig.pos='h', style='float: left'}
+library(gridExtra)
+grid.arrange(
+ggplot(data) +
+  geom_point(aes(y=mpg, x=wt, colour = am)) +
+  ggtitle("MPG x Weight x Transmission")
+,
+ggplot(data) +
+  geom_point(aes(y=mpg, x=hp, colour = am)) +
+  ggtitle("MPG x Horsepower x Transmission")
+, nrow=1)
+```

@@ -1,0 +1,118 @@
+---
+title: "Statistical Inference Part 2"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## THE DATA
+
+The data used for this assignment is the 'ToothGrowth' data: The Effect of Vitamin C on Tooth Growth in Guinea Pigs.
+
+The response is the length of odontoblasts (cells responsible for tooth growth) in 60 guinea pigs. Each animal received one of three dose levels of vitamin C (0.5, 1, and 2 mg/day) by one of two delivery methods, orange juice or ascorbic acid (a form of vitamin C and coded as VC).
+
+The data frame has 60 observations on 3 variables.
+
+1)	len:	numeric	Tooth length
+2)	supp:	factor	Supplement type (VC or OJ).
+3)	dose:	numeric	Dose in milligrams/day
+
+```{r}
+# load data
+data(ToothGrowth) #Dataset - The Effect of Vitamin C on Tooth Growth in Guinea Pigs
+head(ToothGrowth)
+```
+
+The mean toothlength is 18.8 - we'll explore whether this is different by supplement type and dose.
+
+```{r}
+summary(ToothGrowth)
+hist(ToothGrowth$len)
+```
+
+## TOOTH LENGTH BY SUPPLEMENT TYPE
+
+In this sample, the mean tooth length with OJ (20.7) is higher than through VC (17.0). However, the box plot shows more variability in tooth length through the VC deliverability method. 
+
+```{r}
+tapply(ToothGrowth$len, ToothGrowth$supp, mean)
+
+library(ggplot2)
+
+ggplot(ToothGrowth, aes(x=supp, y=len, colour = supp)) + 
+  geom_boxplot() +
+  labs(x="supp", y="Tooth Length", title="Tooth Length & Supplement Type")
+```
+
+** Unpaired Two Sample T-Test: Comparing Tooth Length Mean by Supplement Type **
+
+Let's compute an unpaired two sample t-test to see if there's a significant difference in tooth length between the two delivery methods.
+
+The p value of the test is 0.06, which is higher than the significant alpha = 0.05, so we can't conclude that they are significantly different.
+
+```{r}
+t.test(len ~ supp, data = ToothGrowth, var.equal=TRUE)
+```
+
+## TOOTH LENGTH BY VITAMNIN C DOSE
+
+The box plot shows some very clear differences in tooth length by dose levels.
+
+```{r}
+tapply(ToothGrowth$len, ToothGrowth$dose, mean)
+
+ggplot(ToothGrowth, aes(x=factor(dose), y=len, colour = factor(dose))) + 
+  geom_boxplot() +
+  labs(x="Vit C Dose (milligrams/day)", y="Tooth Length", title="Tooth Length & Vit C Dosage")
+```
+
+** Unpaired Two Sample T-Test: Comparing Tooth Length Mean by Dose Level **
+
+Let's compute an unpaired two sample t-test to see if there's a significant difference in tooth length between the 0.5 and 2 milligrams/day Vitamin C dose levels.
+
+The p value of the test is close to 0, which is below the significant alpha = 0.05, so we can conclude that they are significantly different.
+
+```{r}
+library(dplyr)
+
+dose <- ToothGrowth %>%
+  filter(dose == 0.5 | dose == 2) %>%
+  mutate(dose = factor(dose))
+
+t.test(len ~ dose, data = dose, var.equal=TRUE)
+```
+
+
+** Permutation Test **
+
+Let's also compare these two dose groups doing permutation tests. 
+
+First, we'll subset the data for the two groups we're inerested in: 
+
+```{r}
+sub <- ToothGrowth %>%
+  filter(dose == 0.5 | dose == 2) %>%
+  select(-supp) %>%
+  mutate(dose = as.factor(dose))
+```
+
+Then, we will discard the dose group labels and save them in 'group'. 
+We then evaluate the probablity of getting that difference in mean tooth length between the two doses. 
+
+It is not probable to see the differences observed, with the difference in the mean = 1 in the permuteations, as opposed to an observed difference of -15.5.
+
+```{r}
+y <- sub$len
+group <- sub$dose
+testStat <- function(w, g) mean(w[g == '0.5']) - mean(w[g == '2'])
+observedStat <- testStat(y, group)
+permutations <- sapply(1:10000, function(i) testStat(y, sample(group)))
+observedStat
+
+mean(permutations > observedStat)
+
+hist(permutations)
+```
+
