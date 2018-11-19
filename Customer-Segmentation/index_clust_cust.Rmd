@@ -1,0 +1,531 @@
+---
+title: "Customer Segmentation: k-Prototype Clustering"
+output:
+  html_document:
+    keep_md: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r, echo = F, message=FALSE, warning=FALSE,cache=F}
+setwd("/Users/raqdom/DS_Projects/Clustering_Customers")
+```
+
+## Summary
+
+In this project, the goal is to use a sample of publicly available customer data from telecommunications provider Telco to: **1) give an overview of their customer base; and 2) apply customer segmentation using the k-prototype clustering algorithm** - an extension of k-means clustering that can deal with non-numeric data. 
+
+The analysis generated four clusters that have been labled as follows after exploration:  
+
+
++ Cluster 1: The super customer (likely couples with no kids)
++ Cluster 2: Basic new customer (likely young and on a budget)
++ Cluster 3: Unhappy & overcharged churned customers (likely single parents)
++ Cluster 4: Second best customer (likely young family on a budget)
+
+## Loading packages
+
+```{r, echo = T, message=FALSE, warning=FALSE,cache=F}
+library(dplyr)
+library(ggplot2)
+library(gridExtra)
+library(RColorBrewer)
+library(clustMixType)
+```
+
+## The Data
+
+The data for this project is a sample of Telco's - a telecommunications operator - customer database made publicly available on [Kaggle](https://www.kaggle.com/blastchar/telco-customer-churn). 
+
+Each row represents a customer, and each column contains customer’s attributes.The data set includes information about:
+
++ Customers who left within the last month – the column is called Churn
++ Services that each customer has signed up for – phone, multiple lines, internet, online security, online backup, device protection, tech support, and streaming TV and movies
++ Customer account information – how long they’ve been a customer, contract, payment method, paperless billing, monthly charges, and total charges
++ Demographic info about customers – gender, age range, and if they have partners and dependents
+
+### Importing data  
+```{r, echo = T, cache=T}
+#creating folder for data
+if(!file.exists('project_data')) {
+  dir.create('project_data')
+}
+
+#importing data
+data = read.csv('/Users/raqdom/DS_Projects/Clustering_Customers/WA_Fn-UseC_-Telco-Customer-Churn.csv', na.strings=c("", "NA"))
+```
+
+The data has 21 columns/customer variables and 7,043  rows/customers.  
+```{r, echo = T, cache=T}
+dim(data)
+head(data)
+```
+
+The first 5 rows look as follows:
+```{r, echo = T, cache=T}
+head(data)
+```
+
+The bulk of variables are categorical, except for tenure, monthly charges, total charges, and SerniorCitizen (which looks like a factor).
+```{r, echo = T, cache=T}
+str(data)
+```
+
+### Missing Data
+
+In total, only the column 'TotalCharges' has missing information on 11 customers.
+
+**NA count per column** 
+```{r, echo = T, message=FALSE, warning = FALSE, cache=T}
+missing = sort(sapply(data, function(x) sum(is.na(x))))
+missing[missing>0]
+```
+
+A quick investigation of the data suggests that 'TotalCharges' is a function of 'MonthlyCharges' multiplied by 'tenure' (in months). For those missing values, tenure = 0 as presumably these are new customers that have not been charged yet. We can use this to replace NAs with zero when we clean the data.
+
+**Total Charges**
+```{r, fig.width=3, fig.height=3, echo = T, message=FALSE, warning=FALSE,fig.pos='h', style='float: left', cache=T}
+qplot(data$MonthlyCharges*data$tenure, data$TotalCharges, xlab='Monthly Charges x Tenure', ylab='Total Charges') #total charges = monthly charges * tenure but NA if tenure = 0
+```
+
+### Cleaning data  
+
+#### Imputing Missing Data
+
+We will replace any NAs in 'TotalCharges' with zeros as described above.
+
+```{r, echo = T, message=FALSE, warning = FALSE, cache=T}
+data2 = data %>% mutate(TotalCharges = ifelse(is.na(TotalCharges), 0, TotalCharges))
+```
+
+#### Variable Transformations  
+
+Where more than two categories can be grouped for one variable, we will group them (i.e. for variable 'MultipleLines', we will group 'No' and 'No phone service') as follows:
+
+```{r, echo = T, message=FALSE, warning = FALSE, cache=T}
+data2 = data2 %>% 
+  mutate(SeniorCitizen = as.factor(ifelse(SeniorCitizen == 0, 'No', 'Yes')),
+         MultipleLines = as.factor(ifelse(MultipleLines %in% c('No phone service', 'No'), 'No', 'Yes')),
+         OnlineSecurity = as.factor(ifelse(OnlineSecurity %in% c('No internet service', 'No'), 'No', 'Yes')),
+         OnlineBackup = as.factor(ifelse(OnlineBackup %in% c('No internet service', 'No'), 'No', 'Yes')),
+         DeviceProtection = as.factor(ifelse(DeviceProtection %in% c('No internet service', 'No'), 'No', 'Yes')),
+         TechSupport = as.factor(ifelse(TechSupport %in% c('No internet service', 'No'), 'No', 'Yes')),
+         StreamingTV = as.factor(ifelse(StreamingTV %in% c('No internet service', 'No'), 'No', 'Yes')),
+         StreamingMovies = as.factor(ifelse(StreamingMovies %in% c('No internet service', 'No'), 'No', 'Yes')))
+```
+
+## Exploratory Analysis
+
+### Visualising The Customer Database  
+
+The following charts summarise the customer dataset. A quick overview suggests: 
+
+#### Demographic
+* Even gender split;  
+* A young customer base (only 16% Senior);  
+* Even split in having a partner;  
+* 30% have dependents.    
+  
+```{r, fig.width=15, fig.height=7, echo = F, message=FALSE, warning=FALSE,fig.pos='h', style='float: left', cache=T}
+p1 = ggplot(data2, aes(x = gender, fill = gender)) + 
+  geom_bar(aes(y = (..count..)/sum(..count..)), show.legend = FALSE) +
+  scale_y_continuous(labels = scales::percent) +
+  ylab('Customer %')
+  
+p2 = ggplot(data2, aes(x = SeniorCitizen, fill = SeniorCitizen)) + 
+  geom_bar(aes(y = (..count..)/sum(..count..)), show.legend = FALSE) +
+  scale_y_continuous(labels = scales::percent) +
+  ylab('Customer %')
+
+p3 = ggplot(data2, aes(x = Partner, fill = Partner)) + 
+  geom_bar(aes(y = (..count..)/sum(..count..)), show.legend = FALSE) +
+  scale_y_continuous(labels = scales::percent) +
+  ylab('Customer %')
+
+p4 = ggplot(data2, aes(x = Dependents, fill = Dependents)) + 
+  geom_bar(aes(y = (..count..)/sum(..count..)), show.legend = FALSE) +
+  scale_y_continuous(labels = scales::percent) +
+  ylab('Customer %')
+
+grid.arrange(p1,p2,p3,p4, nrow = 2)
+```
+
+#### Service use (from most to least popular) 
+* 90% use phone service - this has the highest take up;  
+* 78% use Telco's internet service (44% Fiber Optic; 34% DSL);
+* 42% have multiple lines;
+* 39% stream movies;
+* 38% stream TV;
+* 34% have online backup;
+* 34% have device protection;
+* 29% have online security;
+* 29% use tech support.
+
+```{r, fig.width=15, fig.height=10, echo = F, message=FALSE, warning=FALSE,fig.pos='h', style='float: left', cache=T}
+
+p5 = ggplot(data2, aes(x = PhoneService, fill = PhoneService)) + 
+  geom_bar(aes(y = (..count..)/sum(..count..)), show.legend = FALSE) +
+  scale_y_continuous(labels = scales::percent) +
+  ylab('Customer %')
+
+p6 = ggplot(data2, aes(x = InternetService, fill = InternetService)) + 
+  geom_bar(aes(y = (..count..)/sum(..count..)), show.legend = FALSE) +
+  scale_y_continuous(labels = scales::percent) +
+  ylab('Customer %')
+
+p7 = ggplot(data2, aes(x = MultipleLines, fill = MultipleLines)) + 
+  geom_bar(aes(y = (..count..)/sum(..count..)), show.legend = FALSE) +
+  scale_y_continuous(labels = scales::percent) +
+  ylab('Customer %')
+
+p8 = ggplot(data2, aes(x = StreamingMovies, fill = StreamingMovies)) + 
+  geom_bar(aes(y = (..count..)/sum(..count..)), show.legend = FALSE) +
+  scale_y_continuous(labels = scales::percent) +
+  ylab('Customer %')
+
+p9 = ggplot(data2, aes(x = StreamingTV, fill = StreamingTV)) + 
+  geom_bar(aes(y = (..count..)/sum(..count..)), show.legend = FALSE) +
+  scale_y_continuous(labels = scales::percent) +
+  ylab('Customer %')
+
+p10 = ggplot(data2, aes(x = OnlineBackup, fill = OnlineBackup)) + 
+  geom_bar(aes(y = (..count..)/sum(..count..)), show.legend = FALSE) +
+  scale_y_continuous(labels = scales::percent) +
+  ylab('Customer %')
+
+p11 = ggplot(data2, aes(x = DeviceProtection, fill = DeviceProtection)) + 
+  geom_bar(aes(y = (..count..)/sum(..count..)), show.legend = FALSE) +
+  scale_y_continuous(labels = scales::percent) +
+  ylab('Customer %')
+
+p12 = ggplot(data2, aes(x = OnlineSecurity, fill = OnlineSecurity)) + 
+  geom_bar(aes(y = (..count..)/sum(..count..)), show.legend = FALSE) +
+  scale_y_continuous(labels = scales::percent) +
+  ylab('Customer %')
+
+p13 = ggplot(data2, aes(x = TechSupport, fill = TechSupport)) + 
+  geom_bar(aes(y = (..count..)/sum(..count..)), show.legend = FALSE) +
+  scale_y_continuous(labels = scales::percent) +
+  ylab('Customer %')
+
+grid.arrange(p5,p6,p7,p8,p9,p10,p11,p12,p13,nrow = 3)
+```
+
+#### Customer account/lifetime value markers  
+* Median tenure is 29 months; but the most common seems to be 1-2 months (i.e. new customers);
+* Median monthly charges are £70; but the most popular range seems to be from £10 to £30/month.
+* 26% of customers have churned in the last month;
+* 59% use paperless billing;
+* Month-to-Month contracts are the most popular (55% of customers), followed by two-year contracts (24%).
+
+```{r, fig.width=15, fig.height=10, echo = F, message=FALSE, warning=FALSE,fig.pos='h', style='float: left', cache=T}
+
+p14 = ggplot(data2, aes(x = tenure, fill = 'pink')) + 
+  geom_bar(aes(y = (..count..)/sum(..count..)), show.legend = FALSE) +
+  scale_y_continuous(labels = scales::percent) +
+  ylab('Customer %')
+
+p15 = ggplot(data2, aes(x = MonthlyCharges, fill = 'pink')) + 
+  geom_bar(aes(y = (..count..)/sum(..count..)), show.legend = FALSE) +
+  scale_y_continuous(labels = scales::percent) +
+  ylab('Customer %')
+
+p16 = ggplot(data2, aes(x = Churn, fill = Churn)) + 
+  geom_bar(aes(y = (..count..)/sum(..count..)), show.legend = FALSE) +
+  scale_y_continuous(labels = scales::percent) +
+  ylab('Customer %')
+
+p17 = ggplot(data2, aes(x = PaperlessBilling, fill = PaperlessBilling)) + 
+  geom_bar(aes(y = (..count..)/sum(..count..)), show.legend = FALSE) +
+  scale_y_continuous(labels = scales::percent) +
+  ylab('Customer %')
+
+p18 = ggplot(data2, aes(x = Contract, fill = Contract)) + 
+  geom_bar(aes(y = (..count..)/sum(..count..)), show.legend = FALSE) +
+  scale_y_continuous(labels = scales::percent) +
+  ylab('Customer %')
+
+p19 = ggplot(data2, aes(x = PaymentMethod, fill = PaymentMethod)) + 
+  geom_bar(aes(y = (..count..)/sum(..count..)), show.legend = FALSE) +
+  scale_y_continuous(labels = scales::percent) +
+  ylab('Customer %')
+
+grid.arrange(p14,p15,p16,p17,p18,p19,nrow = 3)
+```
+
+### Mapping/Visualising Telco's best customers  
+  
+An ideal customer here will be defined in lifetime value terms: someone whose average spend is high (measured by monthly charges); and whose lifetime with the company is long (tenure). 
+
+The assumption is that Telco would want to maximise customer lifetime value, and wants to understand its drivers so it can improve it (i.e.: through marketing/service offers).
+
+#### Customer Scatterplots  
+To visualise this, we will plot each customer (represented by the dots) alongside monthly charges and tenure, and overlay each variable to bring out any pattern. For clearer visualisation, the median tenure/monthly charges are added. 
+
+In theory, Telco would want every customer to be in the top right quadrant (high charges/high loyalty), and might deploy campaigns designed to move customers from one quadrant to the other.
+
+##### Key insights  
+* Generally, amount charged not strongly correlated with tenure; customers in the most common/lowest monthly charge range (< £30) are spread across tenure axis; however  
+* Churned customers are more likely to have high monthly charges and low tenure;  
+* Senior customers likely to be charged more;
+* Customers with partners more likely to have higher tenure & have higher charges;  
+* Customers using multiple services are more likely to be in top right quadrant: Multiple Lines, Online Security etc...;  
+* Month-to-month contracts yield lowest tenure vs two-year.  
+
+```{r, fig.width=17, fig.height=50, echo = F, message=FALSE, warning=FALSE,fig.pos='h', style='float: left', cache=T}
+
+p37 = ggplot(data2, aes(x=MonthlyCharges, y=tenure, colour= Churn)) +
+  geom_point() +
+  geom_hline(yintercept = 29) +
+  geom_vline(xintercept = 70.35) +
+  scale_color_brewer(palette = 'Set2') + 
+  theme(legend.position="top", 
+        legend.text = element_text(size=13, face="bold"), 
+        legend.title = element_text(size=13, face="bold"))
+
+p21 = ggplot(data2, aes(x=MonthlyCharges, y=tenure, colour=gender)) +
+  geom_point() +
+  geom_hline(yintercept = 29) +
+  geom_vline(xintercept = 70.35)  +
+  scale_color_brewer(palette = 'Set2') + 
+  theme(legend.position="top", 
+        legend.text = element_text(size=13, face="bold"), 
+        legend.title = element_text(size=13, face="bold"))
+
+p22 = ggplot(data2, aes(x=MonthlyCharges, y=tenure, colour=SeniorCitizen)) +
+  geom_point() +
+  geom_hline(yintercept = 29) +
+  geom_vline(xintercept = 70.35)  +
+  scale_color_brewer(palette = 'Set2') + 
+  theme(legend.position="top", 
+        legend.text = element_text(size=13, face="bold"), 
+        legend.title = element_text(size=13, face="bold"))
+
+p23 = ggplot(data2, aes(x=MonthlyCharges, y=tenure, colour= Partner)) +
+  geom_point() +
+  geom_hline(yintercept = 29) +
+  geom_vline(xintercept = 70.35)  +
+  scale_color_brewer(palette = 'Set2') + 
+  theme(legend.position="top", 
+        legend.text = element_text(size=13, face="bold"), 
+        legend.title = element_text(size=13, face="bold"))
+ 
+p24 = ggplot(data2, aes(x=MonthlyCharges, y=tenure, colour= Dependents)) +
+  geom_point() +
+  geom_hline(yintercept = 29) +
+  geom_vline(xintercept = 70.35)   +
+  scale_color_brewer(palette = 'Set2') + 
+  theme(legend.position="top", 
+        legend.text = element_text(size=13, face="bold"), 
+        legend.title = element_text(size=13, face="bold"))
+
+p25 = ggplot(data2, aes(x=MonthlyCharges, y=tenure, colour= PhoneService)) +
+  geom_point() +
+  geom_hline(yintercept = 29) +
+  geom_vline(xintercept = 70.35)   +
+  scale_color_brewer(palette = 'Set2') + 
+  theme(legend.position="top", 
+        legend.text = element_text(size=13, face="bold"), 
+        legend.title = element_text(size=13, face="bold"))
+
+p26 = ggplot(data2, aes(x=MonthlyCharges, y=tenure, colour= MultipleLines)) +
+  geom_point() +
+  geom_hline(yintercept = 29) +
+  geom_vline(xintercept = 70.35)   +
+  scale_color_brewer(palette = 'Set2') + 
+  theme(legend.position="top", 
+        legend.text = element_text(size=13, face="bold"), 
+        legend.title = element_text(size=13, face="bold"))
+
+p27 = ggplot(data2, aes(x=MonthlyCharges, y=tenure, colour= InternetService)) +
+  geom_point() +
+  geom_hline(yintercept = 29) +
+  geom_vline(xintercept = 70.35)  +
+  scale_color_brewer(palette = 'Set2') + 
+  theme(legend.position="top", 
+        legend.text = element_text(size=13, face="bold"), 
+        legend.title = element_text(size=13, face="bold"))
+
+p28 = ggplot(data2, aes(x=MonthlyCharges, y=tenure, colour= OnlineSecurity)) +
+  geom_point() +
+  geom_hline(yintercept = 29) +
+  geom_vline(xintercept = 70.35) +
+  scale_color_brewer(palette = 'Set2') + 
+  theme(legend.position="top", 
+        legend.text = element_text(size=13, face="bold"), 
+        legend.title = element_text(size=13, face="bold"))
+
+p29 = ggplot(data2, aes(x=MonthlyCharges, y=tenure, colour= OnlineBackup)) +
+  geom_point() +
+  geom_hline(yintercept = 29) +
+  geom_vline(xintercept = 70.35) +
+  scale_color_brewer(palette = 'Set2') + 
+  theme(legend.position="top", 
+        legend.text = element_text(size=13, face="bold"), 
+        legend.title = element_text(size=13, face="bold"))
+
+p30 = ggplot(data2, aes(x=MonthlyCharges, y=tenure, colour= DeviceProtection)) +
+  geom_point() +
+  geom_hline(yintercept = 29) +
+  geom_vline(xintercept = 70.35) +
+  scale_color_brewer(palette = 'Set2') + 
+  theme(legend.position="top", 
+        legend.text = element_text(size=13, face="bold"), 
+        legend.title = element_text(size=13, face="bold"))
+
+p31 = ggplot(data2, aes(x=MonthlyCharges, y=tenure, colour= TechSupport)) +
+  geom_point() +
+  geom_hline(yintercept = 29) +
+  geom_vline(xintercept = 70.35) +
+  scale_color_brewer(palette = 'Set2') + 
+  theme(legend.position="top", 
+        legend.text = element_text(size=13, face="bold"), 
+        legend.title = element_text(size=13, face="bold"))
+
+p32 = ggplot(data2, aes(x=MonthlyCharges, y=tenure, colour= StreamingTV)) +
+  geom_point() +
+  geom_hline(yintercept = 29) +
+  geom_vline(xintercept = 70.35) +
+  scale_color_brewer(palette = 'Set2') + 
+  theme(legend.position="top", 
+        legend.text = element_text(size=13, face="bold"), 
+        legend.title = element_text(size=13, face="bold"))
+
+
+p33 = ggplot(data2, aes(x=MonthlyCharges, y=tenure, colour= StreamingMovies)) +
+  geom_point() +
+  geom_hline(yintercept = 29) +
+  geom_vline(xintercept = 70.35) +
+  scale_color_brewer(palette = 'Set2') + 
+  theme(legend.position="top", 
+        legend.text = element_text(size=13, face="bold"), 
+        legend.title = element_text(size=13, face="bold"))
+
+p34 = ggplot(data2, aes(x=MonthlyCharges, y=tenure, colour= Contract)) +
+  geom_point() +
+  geom_hline(yintercept = 29) +
+  geom_vline(xintercept = 70.35) +
+  scale_color_brewer(palette = 'Set2') + 
+  theme(legend.position="top", 
+        legend.text = element_text(size=13, face="bold"), 
+        legend.title = element_text(size=13, face="bold"))
+
+p35 = ggplot(data2, aes(x=MonthlyCharges, y=tenure, colour= PaperlessBilling)) +
+  geom_point() +
+  geom_hline(yintercept = 29) +
+  geom_vline(xintercept = 70.35) +
+  scale_color_brewer(palette = 'Set2') + 
+  theme(legend.position="top", 
+        legend.text = element_text(size=13, face="bold"), 
+        legend.title = element_text(size=13, face="bold"))
+
+p36 = ggplot(data2, aes(x=MonthlyCharges, y=tenure, colour= PaymentMethod)) +
+  geom_point() +
+  geom_hline(yintercept = 29) +
+  geom_vline(xintercept = 70.35) +
+  scale_color_brewer(palette = 'Set2') + 
+  theme(legend.position="top", 
+        legend.text = element_text(size=13, face="bold"), 
+        legend.title = element_text(size=13, face="bold"))
+
+grid.arrange(p37, p21, p22, p23, p24, p25, p26, p27, p28, p29, p30, p31, 
+             p32, p33, p34, p35, p36, 
+             nrow = 9)
+```
+
+## Customer Segmentation
+
+Clustering with customer data - or customer segmentation -  is used to group individuals so that customers in the same group or cluster are more similar to each other than those in other groups/clusters.
+
+### k-Prototypes Clustering  
+
+K-means is a simple unsupervised machine learning algorithm that groups data into a specified number (k) of clusters. It searches for a a partition of the data into k clusters that minimises the within groups sum of squared errors - this is the sum of the squared differences between each observation and its group's mean, and can be used as a measure of variation within a cluster. If all cases within a cluster are identical the sum of squared errors would then be equal to 0. 
+
+However, k-means only works on numeric data. Since here we have factor variables, we will use the k-prototypes algorithm, which is an extension of k-means to deal with categorical data. More info available in [Zhexue Huang's paper](http://www.cs.ust.hk/~qyang/Teaching/537/Papers/huang98extensions.pdf).
+
+### Data pre-processing
+
+Before applying clustering to the data, let's standardise numeric variables so they're on the same scale and get rid of the customerID column, which isn't useful in clustering.
+
+```{r, echo = T, message=FALSE, warning=FALSE,cache=T}
+data_std = data2 %>%
+  mutate_if(is.numeric, scale) %>% #scaling numeric variables
+  select(-customerID) #taking out customerID so it's not used in clustering
+```
+
+### How many clusters?
+
+This algorithm requires us to input the number of clusters we want to group our customers into. To guide this decision, we will save down the values of the within groups sum of squared errors (SSE) against the number of clusters (1 to 10).
+
+Known as the 'elbow' method, the idea is that the chart (tends to look like an arm) will show us where we would start to have diminishing returns. We want to choose a small value of k that still has low SSE.
+
+From looking at this chart, we will stick to grouping customers into 4 clusters.
+
+```{r, echo = T, message=FALSE, warning=FALSE,cache=T, results='hide'}
+set.seed(123)
+wss = sapply(1:10, function(k){kproto(data_std, k, verbose = FALSE)$tot.withinss})
+```
+
+```{r, echo = T, message=FALSE, warning=FALSE,cache=T,fig.width=5, fig.height=4,}
+# Total within-cluster sum of squares vs Choice of k
+qplot(1:10, wss, geom=c('point', 'line'),xlab='Clusters', ylab='Within-cluster sum of squares')
+```
+
+### Applying k-Prototypes
+
+Now that we know we want four clusters, we can run the k-prototypes algorithm on the customer data.
+
+```{r, echo = T, message=FALSE, warning=FALSE,cache=T, results='hide'}
+set.seed(123)
+data_k4 <- kproto(data_std, 4)
+```
+
+This has grouped customers into four clusters, with the following number of customers in each:
+
+```{r, echo = T, message=FALSE, warning=FALSE,cache=T}
+data_k4$size
+```
+
+## The Clusters
+
+We can now explore the properties of each cluster in relation to our variables, and start painting a picture of who these groups could describe so they could be used strategically by the business. 
+
+### Cluster summaries
+
+Having explore the profiles (plots below), they could be summarised as follows: 
+
+##### Cluster 1: The super customer (couples with no kids)
+* Highest tenure & monthly charges - not likely to be churned;
+* Most likely to be multi-service users/use bulk of services on offer, have fiber optic internet, and two-year contract;
+* Likely to: be in a partnership/no kids/even gender split but skewed towards female/not senior citizen.
+
+##### Cluster 2: Basic new customer (young on a budget)
+* Lowest tenure (new customer?) & monthly charges, but not likely to be churned;
+* Most likely to only use phone service, and have month-to-month contract;
+* Likely to: be single/no kids/younger/even gender split.
+
+##### Cluster 3: Unhappy & overcharged churned customers
+* Lowest tenure and second highest monthly charges; likely to be churned.
+* Least likely to use extra services except for more 'modern' ones like TV/Movie streaming, and fiber optic internet, with month-to-month contract. 
+* Likely to: be older, single, with dependents, even gender split.
+
+##### Cluster 4: Second best customer (young family on a budget)
+* Second highest tenure and second lowest monthly charges; not likely to be churned.
+* Second most likely to be multi-service user, with one-year contract. 
+* Likely to: be younger, in partnership, with dependents, even gender split but skewed towarads male.
+
+```{r, echo = F, message=FALSE, warning=FALSE, results='hide', cache=T}
+summary(data_k4)
+```
+
+### Cluster profile plots  
+
+**Cluster % customer split per variable**
+```{r, echo = T, message=FALSE, warning=FALSE,cache=T}
+clprofiles(data_k4, data_std)
+```
+
+
