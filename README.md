@@ -14,8 +14,11 @@ In this project, I used data from accelerometers on the belt, forearm, arm, and 
 
 A classification tree is built that yields very low accuracy (37%), compared to a random forest model that has 98% accuracy.
 
+3. **Customer Segmentation (clustering)** [HAR html github page](https://msra7rr2.github.io/Data-Science-Projects/Customer-Segmentation/index_clust_cust.html)
 
-3. **Some Coursera Coursework Assignments** 
+In this project, the goal is to use a sample of publicly available customer data from telecommunications provider Telco to: **1) give an overview of their customer base; and 2) apply customer segmentation using the k-prototype clustering algorithm** - an extension of k-means clustering that can deal with non-numeric data. 
+
+4. **Some Coursera Coursework Assignments** 
 
 [**Data Cleaning**](https://github.com/msra7rr2/Data-Science-Projects/tree/gh-pages/Coursera%20Coursework%20-%20Data%20Cleaning): Write code that does the following and submit tidy dataset: 
 1. Merges the training and the test sets to create one data set.
