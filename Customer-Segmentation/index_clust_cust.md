@@ -386,18 +386,21 @@ Having explore the profiles (plots below), they could be summarised as follows:
 ##### Cluster 4: Second best customer (young family on a budget)
 * Second highest tenure and second lowest monthly charges; not likely to be churned.
 * Second most likely to be multi-service user, with one-year contract. 
-* Likely to: be younger, in partnership, with dependents, even gender split but skewed towarads male.
+* Likely to: be younger, in partnership, with dependents, even gender split but skewed towarads male.21
 
 
 
 ### Cluster profile plots  
 
-**Cluster % customer split per variable**
+The following show the % of customers by cluster across our variables. 
 
-```r
-clprofiles(data_k4, data_std)
-```
+#### Demographic  
 
-![](index_clust_cust_files/figure-html/unnamed-chunk-21-1.png)<!-- -->![](index_clust_cust_files/figure-html/unnamed-chunk-21-2.png)<!-- -->![](index_clust_cust_files/figure-html/unnamed-chunk-21-3.png)<!-- -->![](index_clust_cust_files/figure-html/unnamed-chunk-21-4.png)<!-- -->![](index_clust_cust_files/figure-html/unnamed-chunk-21-5.png)<!-- -->![](index_clust_cust_files/figure-html/unnamed-chunk-21-6.png)<!-- -->![](index_clust_cust_files/figure-html/unnamed-chunk-21-7.png)<!-- -->![](index_clust_cust_files/figure-html/unnamed-chunk-21-8.png)<!-- -->![](index_clust_cust_files/figure-html/unnamed-chunk-21-9.png)<!-- -->![](index_clust_cust_files/figure-html/unnamed-chunk-21-10.png)<!-- -->![](index_clust_cust_files/figure-html/unnamed-chunk-21-11.png)<!-- -->![](index_clust_cust_files/figure-html/unnamed-chunk-21-12.png)<!-- -->![](index_clust_cust_files/figure-html/unnamed-chunk-21-13.png)<!-- -->![](index_clust_cust_files/figure-html/unnamed-chunk-21-14.png)<!-- -->![](index_clust_cust_files/figure-html/unnamed-chunk-21-15.png)<!-- -->![](index_clust_cust_files/figure-html/unnamed-chunk-21-16.png)<!-- -->![](index_clust_cust_files/figure-html/unnamed-chunk-21-17.png)<!-- -->![](index_clust_cust_files/figure-html/unnamed-chunk-21-18.png)<!-- -->![](index_clust_cust_files/figure-html/unnamed-chunk-21-19.png)<!-- -->![](index_clust_cust_files/figure-html/unnamed-chunk-21-20.png)<!-- -->
+![](index_clust_cust_files/figure-html/unnamed-chunk-21-1.png)<!-- -->
 
+#### Service use
+![](index_clust_cust_files/figure-html/unnamed-chunk-22-1.png)<!-- -->
 
+#### Customer Account
+
+![](index_clust_cust_files/figure-html/unnamed-chunk-23-1.png)<!-- -->

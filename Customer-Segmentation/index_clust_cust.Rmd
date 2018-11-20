@@ -87,7 +87,7 @@ missing[missing>0]
 A quick investigation of the data suggests that 'TotalCharges' is a function of 'MonthlyCharges' multiplied by 'tenure' (in months). For those missing values, tenure = 0 as presumably these are new customers that have not been charged yet. We can use this to replace NAs with zero when we clean the data.
 
 **Total Charges**
-```{r, fig.width=3, fig.height=3, echo = T, message=FALSE, warning=FALSE,fig.pos='h', style='float: left', cache=T}
+```{r, fig.width=5, fig.height=4, echo = T, message=FALSE, warning=FALSE,fig.pos='h', style='float: left', cache=T}
 qplot(data$MonthlyCharges*data$tenure, data$TotalCharges, xlab='Monthly Charges x Tenure', ylab='Total Charges') #total charges = monthly charges * tenure but NA if tenure = 0
 ```
 
@@ -129,7 +129,7 @@ The following charts summarise the customer dataset. A quick overview suggests:
 * Even split in having a partner;  
 * 30% have dependents.    
   
-```{r, fig.width=15, fig.height=7, echo = F, message=FALSE, warning=FALSE,fig.pos='h', style='float: left', cache=T}
+```{r, fig.width=7, fig.height=6, echo = F, message=FALSE, warning=FALSE,fig.pos='h', style='float: left', cache=T}
 p1 = ggplot(data2, aes(x = gender, fill = gender)) + 
   geom_bar(aes(y = (..count..)/sum(..count..)), show.legend = FALSE) +
   scale_y_continuous(labels = scales::percent) +
@@ -515,7 +515,7 @@ Having explore the profiles (plots below), they could be summarised as follows:
 ##### Cluster 4: Second best customer (young family on a budget)
 * Second highest tenure and second lowest monthly charges; not likely to be churned.
 * Second most likely to be multi-service user, with one-year contract. 
-* Likely to: be younger, in partnership, with dependents, even gender split but skewed towarads male.
+* Likely to: be younger, in partnership, with dependents, even gender split but skewed towarads male.21
 
 ```{r, echo = F, message=FALSE, warning=FALSE, results='hide', cache=T}
 summary(data_k4)
@@ -523,9 +523,224 @@ summary(data_k4)
 
 ### Cluster profile plots  
 
-**Cluster % customer split per variable**
-```{r, echo = T, message=FALSE, warning=FALSE,cache=T}
-clprofiles(data_k4, data_std)
+The following show the % of customers by cluster across our variables. 
+
+#### Demographic  
+
+```{r, fig.width=15, fig.height=7, echo = F, message=FALSE, warning=FALSE,fig.pos='h', style='float: left', cache=T}
+cluster_data = cbind(data2, Cluster = as.factor(data_k4$cluster))
+
+#clprofiles(data_k4, data_std) does this, but a bit ugly
+
+p37 = cluster_data %>%
+  group_by(Cluster, gender) %>%
+  summarise(customers = n()) %>%
+  mutate(percent = customers/sum(customers)) %>%
+  ggplot(aes(x = gender, y = percent)) + 
+  geom_bar(stat = 'identity', aes(fill = Cluster), position = 'dodge', show.legend = TRUE) +
+  scale_y_continuous(labels = scales::percent) +
+  ylab('Cluster Customer %') +
+  scale_fill_brewer(palette = 'Set3') + 
+  theme_minimal()
+
+p38 = cluster_data %>%
+  group_by(Cluster, SeniorCitizen) %>%
+  summarise(customers = n()) %>%
+  mutate(percent = customers/sum(customers)) %>%
+  ggplot(aes(x = SeniorCitizen, y = percent)) + 
+  geom_bar(stat = 'identity', aes(fill = Cluster), position = 'dodge', show.legend = TRUE) +
+  scale_y_continuous(labels = scales::percent) +
+  ylab('Cluster Customer %') +
+  scale_fill_brewer(palette = 'Set3') + 
+  theme_minimal()
+
+p39 = cluster_data %>%
+  group_by(Cluster, Partner) %>%
+  summarise(customers = n()) %>%
+  mutate(percent = customers/sum(customers)) %>%
+  ggplot(aes(x = Partner, y = percent)) + 
+  geom_bar(stat = 'identity', aes(fill = Cluster), position = 'dodge', show.legend = TRUE) +
+  scale_y_continuous(labels = scales::percent) +
+  ylab('Cluster Customer %') +
+  scale_fill_brewer(palette = 'Set3') + 
+  theme_minimal()
+
+p40 = cluster_data %>%
+  group_by(Cluster, Dependents) %>%
+  summarise(customers = n()) %>%
+  mutate(percent = customers/sum(customers)) %>%
+  ggplot(aes(x = Dependents, y = percent)) + 
+  geom_bar(stat = 'identity', aes(fill = Cluster), position = 'dodge', show.legend = TRUE) +
+  scale_y_continuous(labels = scales::percent) +
+  ylab('Cluster Customer %') +
+  scale_fill_brewer(palette = 'Set3') + 
+  theme_minimal()
+
+grid.arrange(p37,p38,p39,p40, nrow = 2)
 ```
 
+#### Service use
+```{r, fig.width=15, fig.height=15, echo = F, message=FALSE, warning=FALSE,fig.pos='h', style='float: left', cache=T}
 
+p41 = cluster_data %>%
+  group_by(Cluster, PhoneService) %>%
+  summarise(customers = n()) %>%
+  mutate(percent = customers/sum(customers)) %>%
+  ggplot(aes(x = PhoneService, y = percent)) + 
+  geom_bar(stat = 'identity', aes(fill = Cluster), position = 'dodge', show.legend = TRUE) +
+  scale_y_continuous(labels = scales::percent) +
+  ylab('Cluster Customer %') +
+  scale_fill_brewer(palette = 'Set3') + 
+  theme_minimal()
+
+p42 = cluster_data %>%
+  group_by(Cluster, InternetService) %>%
+  summarise(customers = n()) %>%
+  mutate(percent = customers/sum(customers)) %>%
+  ggplot(aes(x = InternetService, y = percent)) + 
+  geom_bar(stat = 'identity', aes(fill = Cluster), position = 'dodge', show.legend = TRUE) +
+  scale_y_continuous(labels = scales::percent) +
+  ylab('Cluster Customer %') +
+  scale_fill_brewer(palette = 'Set3') + 
+  theme_minimal()
+
+
+p43 = cluster_data %>%
+  group_by(Cluster, MultipleLines) %>%
+  summarise(customers = n()) %>%
+  mutate(percent = customers/sum(customers)) %>%
+  ggplot(aes(x = MultipleLines, y = percent)) + 
+  geom_bar(stat = 'identity', aes(fill = Cluster), position = 'dodge', show.legend = TRUE) +
+  scale_y_continuous(labels = scales::percent) +
+  ylab('Cluster Customer %') +
+  scale_fill_brewer(palette = 'Set3') + 
+  theme_minimal()
+
+p44 = cluster_data %>%
+  group_by(Cluster, StreamingMovies) %>%
+  summarise(customers = n()) %>%
+  mutate(percent = customers/sum(customers)) %>%
+  ggplot(aes(x = StreamingMovies, y = percent)) + 
+  geom_bar(stat = 'identity', aes(fill = Cluster), position = 'dodge', show.legend = TRUE) +
+  scale_y_continuous(labels = scales::percent) +
+  ylab('Cluster Customer %') +
+  scale_fill_brewer(palette = 'Set3') + 
+  theme_minimal()
+
+p45 = cluster_data %>%
+  group_by(Cluster, StreamingTV) %>%
+  summarise(customers = n()) %>%
+  mutate(percent = customers/sum(customers)) %>%
+  ggplot(aes(x = StreamingTV, y = percent)) + 
+  geom_bar(stat = 'identity', aes(fill = Cluster), position = 'dodge', show.legend = TRUE) +
+  scale_y_continuous(labels = scales::percent) +
+  ylab('Cluster Customer %') +
+  scale_fill_brewer(palette = 'Set3') + 
+  theme_minimal()
+
+p46 = cluster_data %>%
+  group_by(Cluster, OnlineBackup) %>%
+  summarise(customers = n()) %>%
+  mutate(percent = customers/sum(customers)) %>%
+  ggplot(aes(x = OnlineBackup, y = percent)) + 
+  geom_bar(stat = 'identity', aes(fill = Cluster), position = 'dodge', show.legend = TRUE) +
+  scale_y_continuous(labels = scales::percent) +
+  ylab('Cluster Customer %') +
+  scale_fill_brewer(palette = 'Set3') + 
+  theme_minimal()
+
+p47 = cluster_data %>%
+  group_by(Cluster, DeviceProtection) %>%
+  summarise(customers = n()) %>%
+  mutate(percent = customers/sum(customers)) %>%
+  ggplot(aes(x = DeviceProtection, y = percent)) + 
+  geom_bar(stat = 'identity', aes(fill = Cluster), position = 'dodge', show.legend = TRUE) +
+  scale_y_continuous(labels = scales::percent) +
+  ylab('Cluster Customer %') +
+  scale_fill_brewer(palette = 'Set3') + 
+  theme_minimal()
+
+p48 = cluster_data %>%
+  group_by(Cluster, OnlineSecurity) %>%
+  summarise(customers = n()) %>%
+  mutate(percent = customers/sum(customers)) %>%
+  ggplot(aes(x = OnlineSecurity, y = percent)) + 
+  geom_bar(stat = 'identity', aes(fill = Cluster), position = 'dodge', show.legend = TRUE) +
+  scale_y_continuous(labels = scales::percent) +
+  ylab('Cluster Customer %') +
+  scale_fill_brewer(palette = 'Set3') + 
+  theme_minimal()
+
+p49 = cluster_data %>%
+  group_by(Cluster, TechSupport) %>%
+  summarise(customers = n()) %>%
+  mutate(percent = customers/sum(customers)) %>%
+  ggplot(aes(x = TechSupport, y = percent)) + 
+  geom_bar(stat = 'identity', aes(fill = Cluster), position = 'dodge', show.legend = TRUE) +
+  scale_y_continuous(labels = scales::percent) +
+  ylab('Cluster Customer %') +
+  scale_fill_brewer(palette = 'Set3') + 
+  theme_minimal()
+
+grid.arrange(p41,p42,p43,p44,p45,p46,p47,p48, nrow = 4)
+```
+
+#### Customer Account
+
+```{r, fig.width=15, fig.height=10, echo = F, message=FALSE, warning=FALSE,fig.pos='h', style='float: left', cache=T}
+p50 = ggplot(cluster_data, aes(y = tenure, x=Cluster, fill=Cluster)) +
+  geom_boxplot() +
+  scale_fill_brewer(palette = 'Set3') + 
+  theme_minimal()
+
+p51 = ggplot(cluster_data, aes(y = MonthlyCharges, x=Cluster, fill=Cluster)) +
+  geom_boxplot() +
+  scale_fill_brewer(palette = 'Set3') + 
+  theme_minimal()
+
+p52 = cluster_data %>%
+  group_by(Cluster, Churn) %>%
+  summarise(customers = n()) %>%
+  mutate(percent = customers/sum(customers)) %>%
+  ggplot(aes(x = Churn, y = percent)) + 
+  geom_bar(stat = 'identity', aes(fill = Cluster), position = 'dodge', show.legend = TRUE) +
+  scale_y_continuous(labels = scales::percent) +
+  ylab('Cluster Customer %') +
+  scale_fill_brewer(palette = 'Set3') + 
+  theme_minimal()
+
+p53 = cluster_data %>%
+  group_by(Cluster, PaperlessBilling) %>%
+  summarise(customers = n()) %>%
+  mutate(percent = customers/sum(customers)) %>%
+  ggplot(aes(x = PaperlessBilling, y = percent)) + 
+  geom_bar(stat = 'identity', aes(fill = Cluster), position = 'dodge', show.legend = TRUE) +
+  scale_y_continuous(labels = scales::percent) +
+  ylab('Cluster Customer %') +
+  scale_fill_brewer(palette = 'Set3') + 
+  theme_minimal()
+
+p54 = cluster_data %>%
+  group_by(Cluster, Contract) %>%
+  summarise(customers = n()) %>%
+  mutate(percent = customers/sum(customers)) %>%
+  ggplot(aes(x = Contract, y = percent)) + 
+  geom_bar(stat = 'identity', aes(fill = Cluster), position = 'dodge', show.legend = TRUE) +
+  scale_y_continuous(labels = scales::percent) +
+  ylab('Cluster Customer %') +
+  scale_fill_brewer(palette = 'Set3') + 
+  theme_minimal()
+
+p55 = cluster_data %>%
+  group_by(Cluster, PaymentMethod) %>%
+  summarise(customers = n()) %>%
+  mutate(percent = customers/sum(customers)) %>%
+  ggplot(aes(x = PaymentMethod, y = percent)) + 
+  geom_bar(stat = 'identity', aes(fill = Cluster), position = 'dodge', show.legend = TRUE) +
+  scale_y_continuous(labels = scales::percent) +
+  ylab('Cluster Customer %') +
+  scale_fill_brewer(palette = 'Set3') + 
+  theme_minimal()
+
+grid.arrange(p50,p51,p52,p53,p54,p55, nrow = 3)
+```
