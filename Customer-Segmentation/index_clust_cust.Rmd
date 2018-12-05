@@ -20,7 +20,6 @@ In this project, the goal is to use a sample of publicly available customer data
 
 The analysis generated four clusters that have been labled as follows after exploration:  
 
-
 + Cluster 1: The super customer (likely couples with no kids)
 + Cluster 2: Basic new customer (likely young and on a budget)
 + Cluster 3: Unhappy & overcharged churned customers (likely single parents)
@@ -61,7 +60,6 @@ data = read.csv('/Users/raqdom/DS_Projects/Clustering_Customers/WA_Fn-UseC_-Telc
 The data has 21 columns/customer variables and 7,043  rows/customers.  
 ```{r, echo = T, cache=T}
 dim(data)
-head(data)
 ```
 
 The first 5 rows look as follows:
@@ -442,7 +440,7 @@ Clustering with customer data - or customer segmentation -  is used to group ind
 
 ### k-Prototypes Clustering  
 
-K-means is a simple unsupervised machine learning algorithm that groups data into a specified number (k) of clusters. It searches for a a partition of the data into k clusters that minimises the within groups sum of squared errors - this is the sum of the squared differences between each observation and its group's mean, and can be used as a measure of variation within a cluster. If all cases within a cluster are identical the sum of squared errors would then be equal to 0. 
+K-means is a simple unsupervised machine learning algorithm that groups data into a specified number of (k) clusters. It searches for a a partition of the data into k clusters that minimises the within groups sum of squared errors - this is the sum of the squared differences between each observation and its group's mean, and can be used as a measure of variation within a cluster. If all cases within a cluster are identical the sum of squared errors would then be equal to 0. 
 
 However, k-means only works on numeric data. Since here we have factor variables, we will use the k-prototypes algorithm, which is an extension of k-means to deal with categorical data. More info available in [Zhexue Huang's paper](http://www.cs.ust.hk/~qyang/Teaching/537/Papers/huang98extensions.pdf).
 

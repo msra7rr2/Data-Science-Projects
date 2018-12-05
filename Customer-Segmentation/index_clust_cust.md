@@ -16,7 +16,6 @@ In this project, the goal is to use a sample of publicly available customer data
 
 The analysis generated four clusters that have been labled as follows after exploration:  
 
-
 + Cluster 1: The super customer (likely couples with no kids)
 + Cluster 2: Basic new customer (likely young and on a budget)
 + Cluster 3: Unhappy & overcharged churned customers (likely single parents)
@@ -64,48 +63,6 @@ dim(data)
 
 ```
 ## [1] 7043   21
-```
-
-```r
-head(data)
-```
-
-```
-##   customerID gender SeniorCitizen Partner Dependents tenure PhoneService
-## 1 7590-VHVEG Female             0     Yes         No      1           No
-## 2 5575-GNVDE   Male             0      No         No     34          Yes
-## 3 3668-QPYBK   Male             0      No         No      2          Yes
-## 4 7795-CFOCW   Male             0      No         No     45           No
-## 5 9237-HQITU Female             0      No         No      2          Yes
-## 6 9305-CDSKC Female             0      No         No      8          Yes
-##      MultipleLines InternetService OnlineSecurity OnlineBackup
-## 1 No phone service             DSL             No          Yes
-## 2               No             DSL            Yes           No
-## 3               No             DSL            Yes          Yes
-## 4 No phone service             DSL            Yes           No
-## 5               No     Fiber optic             No           No
-## 6              Yes     Fiber optic             No           No
-##   DeviceProtection TechSupport StreamingTV StreamingMovies       Contract
-## 1               No          No          No              No Month-to-month
-## 2              Yes          No          No              No       One year
-## 3               No          No          No              No Month-to-month
-## 4              Yes         Yes          No              No       One year
-## 5               No          No          No              No Month-to-month
-## 6              Yes          No         Yes             Yes Month-to-month
-##   PaperlessBilling             PaymentMethod MonthlyCharges TotalCharges
-## 1              Yes          Electronic check          29.85        29.85
-## 2               No              Mailed check          56.95      1889.50
-## 3              Yes              Mailed check          53.85       108.15
-## 4               No Bank transfer (automatic)          42.30      1840.75
-## 5              Yes          Electronic check          70.70       151.65
-## 6              Yes          Electronic check          99.65       820.50
-##   Churn
-## 1    No
-## 2    No
-## 3   Yes
-## 4    No
-## 5   Yes
-## 6   Yes
 ```
 
 The first 5 rows look as follows:
@@ -300,7 +257,7 @@ Clustering with customer data - or customer segmentation -  is used to group ind
 
 ### k-Prototypes Clustering  
 
-K-means is a simple unsupervised machine learning algorithm that groups data into a specified number (k) of clusters. It searches for a a partition of the data into k clusters that minimises the within groups sum of squared errors - this is the sum of the squared differences between each observation and its group's mean, and can be used as a measure of variation within a cluster. If all cases within a cluster are identical the sum of squared errors would then be equal to 0. 
+K-means is a simple unsupervised machine learning algorithm that groups data into a specified number of (k) clusters. It searches for a a partition of the data into k clusters that minimises the within groups sum of squared errors - this is the sum of the squared differences between each observation and its group's mean, and can be used as a measure of variation within a cluster. If all cases within a cluster are identical the sum of squared errors would then be equal to 0. 
 
 However, k-means only works on numeric data. Since here we have factor variables, we will use the k-prototypes algorithm, which is an extension of k-means to deal with categorical data. More info available in [Zhexue Huang's paper](http://www.cs.ust.hk/~qyang/Teaching/537/Papers/huang98extensions.pdf).
 
